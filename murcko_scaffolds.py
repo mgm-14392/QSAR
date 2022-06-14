@@ -36,7 +36,7 @@ def ClusterFps(fps,cutoff=0.2):
 
 if __name__ == '__main__':
 
-    mypath = '/Users/marianagonzmed/Desktop/ThesisStuff/shapeNW_training/descriptors/descriptors_clean_activity_data_test_O75762.csv'
+    mypath = '/Users/marianagonzmed/Desktop/ThesisStuff/shapeNW_training/descriptors/'
 
     if isdir(mypath):
         onlyfiles_all = [ join(mypath, f) for f in listdir(mypath) if isfile(join(mypath, f))]
@@ -55,6 +55,9 @@ if __name__ == '__main__':
         if file_act.shape[1] == 1:
             file_act = pd.read_csv(_file, sep=',')
 
+        # only get rows with EC50 and Ki
+        file_act = file_act.loc[file_act['measure'].isin(['Ki','EC50'])]
+
         file_act = get_murcko_smiles(file_act)
         PandasTools.AddMoleculeColumnToFrame(file_act, smilesCol='murcko_smiles')
         print(len(file_act['ROMol']))
@@ -64,5 +67,12 @@ if __name__ == '__main__':
 
         file_act['murcko_cluster'] = clusters_results[0]
         print(file_act.head(3))
+
+        # split train and test
+        train = file_act.sample(frac=0.8,random_state=200) #random state is a seed value
+        train.to_csv('/Users/marianagonzmed/Desktop/ThesisStuff/shapeNW_training/descriptors/train_%s.csv' % output_filename, index=False)
+
+        test = file_act.drop(train.index).sample(frac=1.0)
+        test.to_csv('/Users/marianagonzmed/Desktop/ThesisStuff/shapeNW_training/descriptors/test_%s.csv' % output_filename, index=False)
 
 
