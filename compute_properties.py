@@ -46,6 +46,25 @@ def calculate_moldescriptors(df):
     return df
 
 
+def calculate_fingerprints(esol_data, radius = 2, nbits = 1024, kind = 'bits'):
+    morganfps = chemistry.morgan_fingerprint(esol_data, mols_col='ROMol', radius=radius, nbits=nbits, kind=kind)
+    morganfps = morganfps.add_prefix('morgan_')
+    print('number of rows in fps %d' % morganfps.shape[0])
+
+    morganfps = esol_data.join(morganfps)
+    print(morganfps.head(0))
+    print('number of rows in fps %d' % morganfps.shape[0])
+    print('number of cols in fps %d' % morganfps.shape[1])
+
+    maccsfps = chemistry.maccs_keys_fingerprint(esol_data, mols_col='ROMol')
+    maccsfps = maccsfps.add_prefix('maccs_')
+    fpsjoined = morganfps.join(maccsfps)
+    print(fpsjoined.head(0))
+    print('number of rows in fps %d' % fpsjoined.shape[0])
+    print('number of cols in fps %d' % fpsjoined.shape[1])
+    return fpsjoined
+
+
 if __name__ == '__main__':
 
     #mypath = sys.argv[1]
@@ -65,37 +84,22 @@ if __name__ == '__main__':
         #esol_data.columns = ['smiles', 'protein', 'type', 'aff', 'affmM', 'paff']
         esol_data = pd.read_csv(_file, sep=',', header=None)
         print(esol_data.head(2))
-        esol_data.columns = ['smiles', 'measure', 'nM', 'microM', 'pmicroM']
+        esol_data.columns = ['smiles', 'measure', 'nM', 'microM', 'pmicroM','canonical_smiles']
         #esol_data.columns = ['smiles']
 
         # add RMol column with rdkit object to df
-        PandasTools.AddMoleculeColumnToFrame(esol_data, smilesCol='smiles')
+        PandasTools.AddMoleculeColumnToFrame(esol_data, smilesCol='canonical_smiles')
         # remove smiles that can't be processed
         esol_data = esol_data.mask(esol_data.astype(object).eq('None')).dropna()
         print('number of rows in intial df %d' % esol_data.shape[0])
 
-        morganfps = chemistry.morgan_fingerprint(esol_data, mols_col='ROMol', radius=2, nbits=1024, kind='bits')
-        morganfps = morganfps.add_prefix('morgan_')
-        print('number of rows in fps %d' % morganfps.shape[0])
-
-        morganfps = esol_data.join(morganfps)
-        print(morganfps.head(0))
-        print('number of rows in fps %d' % morganfps.shape[0])
-        print('number of cols in fps %d' % morganfps.shape[1])
-
-        maccsfps = chemistry.maccs_keys_fingerprint(esol_data, mols_col='ROMol')
-        maccsfps = maccsfps.add_prefix('maccs_')
-        fpsjoined = morganfps.join(maccsfps)
-        print(fpsjoined.head(0))
-        print('number of rows in fps %d' % fpsjoined.shape[0])
-        print('number of cols in fps %d' % fpsjoined.shape[1])
-
+        fpsjoined = calculate_fingerprints(esol_data)
         descs_fps_df = calculate_moldescriptors(fpsjoined)
+
         print(descs_fps_df.head(0))
         print('number of rows in descs %d' % descs_fps_df.shape[0])
         print('number of cols in descs %d' % descs_fps_df.shape[1])
 
-        descs_fps_df['canonical_SMILES'] = descs_fps_df.ROMol.apply(MolToSmiles)
         descs_fps_df.drop('ROMol', inplace=True, axis=1)
 
-        descs_fps_df.to_csv('/Users/marianagonzmed/Desktop/ThesisStuff/shapeNW_training/QSAR_molecules/descriptors_%s.csv' % output_filename)
+        descs_fps_df.to_csv('/Users/marianagonzmed/Desktop/ThesisStuff/shapeNW_training/descriptors/descriptors_%s.csv' % output_filename, index=False)
