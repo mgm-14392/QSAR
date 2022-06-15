@@ -13,7 +13,7 @@ def get_murcko_smiles(file_act):
 
 
 #Define clustering setup
-def ClusterFps(fps,cutoff=0.2):
+def ClusterFps(fps,cutoff=0.7):
     from rdkit import DataStructs
     from rdkit.ML.Cluster import Butina
 
@@ -59,20 +59,22 @@ if __name__ == '__main__':
         file_act = file_act.loc[file_act['measure'].isin(['Ki','EC50'])]
 
         file_act = get_murcko_smiles(file_act)
-        PandasTools.AddMoleculeColumnToFrame(file_act, smilesCol='murcko_smiles')
-        print(len(file_act['ROMol']))
+        PandasTools.AddMoleculeColumnToFrame(file_act, smilesCol='murcko_smiles', molCol='ROMol_murcko')
+        print(len(file_act['ROMol_murcko']))
 
-        fps = [AllChem.GetMorganFingerprintAsBitVect(x,2,1024) for x in file_act['ROMol']]
+        fps = [AllChem.GetMorganFingerprintAsBitVect(x,2,1024) for x in file_act['ROMol_murcko']]
         clusters_results = ClusterFps(fps, cutoff=0.4)
 
         file_act['murcko_cluster'] = clusters_results[0]
-        print(file_act.head(3))
+
+        check = file_act[['smiles', 'murcko_smiles','murcko_cluster']]
+        check.to_csv('/Users/marianagonzmed/Desktop/ThesisStuff/shapeNW_training/descriptors/scaffold_%s.csv' % output_filename, index=False)
 
         # split train and test
-        train = file_act.sample(frac=0.8,random_state=200) #random state is a seed value
-        train.to_csv('/Users/marianagonzmed/Desktop/ThesisStuff/shapeNW_training/descriptors/train_%s.csv' % output_filename, index=False)
+        #train = file_act.groupby('murcko_cluster').sample(frac=0.8,random_state=200) #random state is a seed value
+        #train.to_csv('/Users/marianagonzmed/Desktop/ThesisStuff/shapeNW_training/descriptors/train_%s.csv' % output_filename, index=False)
 
-        test = file_act.drop(train.index).sample(frac=1.0)
-        test.to_csv('/Users/marianagonzmed/Desktop/ThesisStuff/shapeNW_training/descriptors/test_%s.csv' % output_filename, index=False)
+        #test = file_act.drop(train.index).sample(frac=1.0)
+        #test.to_csv('/Users/marianagonzmed/Desktop/ThesisStuff/shapeNW_training/descriptors/test_%s.csv' % output_filename, index=False)
 
 
