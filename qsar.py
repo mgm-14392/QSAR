@@ -1,3 +1,12 @@
+"""
+Code for running and optimizing some classical machine learning algorithsm
+Derek van Tilborg, Eindhoven University of Technology, March 2022
+
+Taken from: 10.26434/chemrxiv-2022-mfq52
+https://github.com/molML/MoleculeACE/blob/main/MoleculeACE/
+
+"""
+
 import pandas as pd
 from sklearn.model_selection import GridSearchCV
 from sklearn.svm import SVR
