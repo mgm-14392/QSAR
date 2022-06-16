@@ -52,7 +52,7 @@ if __name__ == '__main__':
 
         # split training and test data by scaffolds
         EC50_Ki_descriptors = get_murcko_smiles(EC50_Ki_descriptors)
-        PandasTools.AddMoleculeColumnToFrame(file_act, smilesCol='murcko_smiles', molCol='ROMol_murcko')
+        PandasTools.AddMoleculeColumnToFrame(EC50_Ki_descriptors , smilesCol='murcko_smiles', molCol='ROMol_murcko')
         fps = [AllChem.GetMorganFingerprintAsBitVect(x, 2, 1024) for x in EC50_Ki_descriptors['ROMol_murcko']]
 
         clusters_results, clusters = ClusterFps(fps, cutoff=0.4)
@@ -64,7 +64,8 @@ if __name__ == '__main__':
         train = clusters_results.groupby('murcko_cluster').sample(frac=0.8,random_state=200)
         test = clusters_results.drop(train.index).sample(frac=1.0)
 
-        print(train.head(0))
+        print(train.shape[0])
+        print(test.shape[0])
 
         ##########
         #  QSAR SVMR and ECFP 2, 1024

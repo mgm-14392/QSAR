@@ -49,59 +49,59 @@ def calculate_moldescriptors(df):
 def calculate_fingerprints(esol_data, radius = 2, nbits = 1024, kind = 'bits', MACCS=False):
     morganfps = chemistry.morgan_fingerprint(esol_data, mols_col='ROMol', radius=radius, nbits=nbits, kind=kind)
     morganfps = morganfps.add_prefix('morgan_')
-    print('number of rows in fps %d' % morganfps.shape[0])
+    #print('number of rows in fps %d' % morganfps.shape[0])
 
     morganfps = esol_data.join(morganfps)
-    print(morganfps.head(0))
-    print('number of rows in fps %d' % morganfps.shape[0])
-    print('number of cols in fps %d' % morganfps.shape[1])
+    # print(morganfps.head(0))
+    # print('number of rows in fps %d' % morganfps.shape[0])
+    # print('number of cols in fps %d' % morganfps.shape[1])
 
     if MACCS:
         maccsfps = chemistry.maccs_keys_fingerprint(esol_data, mols_col='ROMol')
         maccsfps = maccsfps.add_prefix('maccs_')
         morganfps = morganfps.join(maccsfps)
-        print(fpsjoined.head(0))
-        print('number of rows in fps %d' % fpsjoined.shape[0])
-        print('number of cols in fps %d' % fpsjoined.shape[1])
+        # print(fpsjoined.head(0))
+        # print('number of rows in fps %d' % fpsjoined.shape[0])
+        # print('number of cols in fps %d' % fpsjoined.shape[1])
 
     return morganfps
 
 
-if __name__ == '__main__':
-
-    #mypath = sys.argv[1]
-    mypath= '/Users/marianagonzmed/Desktop/ThesisStuff/shapeNW_training'
-
-    if isdir(mypath):
-        onlyfiles_all = [ join(mypath, f) for f in listdir(mypath) if isfile(join(mypath, f))]
-        onlyfiles = [_file for _file in onlyfiles_all if _file.endswith('.csv') ]
-    elif isfile(mypath):
-        onlyfiles =[mypath]
-
-
-    for _file in onlyfiles:
-        output_filename = _file.split('/')[-1].split('.')[0]
-
-        #esol_data = pd.read_csv(_file, sep='\t', header=None)
-        #esol_data.columns = ['smiles', 'protein', 'type', 'aff', 'affmM', 'paff']
-        esol_data = pd.read_csv(_file, sep=',', header=None)
-        print(esol_data.head(2))
-        esol_data.columns = ['smiles', 'measure', 'nM', 'microM', 'pmicroM','canonical_smiles']
-        #esol_data.columns = ['smiles']
-
-        # add RMol column with rdkit object to df
-        PandasTools.AddMoleculeColumnToFrame(esol_data, smilesCol='canonical_smiles')
-        # remove smiles that can't be processed
-        esol_data = esol_data.mask(esol_data.astype(object).eq('None')).dropna()
-        print('number of rows in intial df %d' % esol_data.shape[0])
-
-        fpsjoined = calculate_fingerprints(esol_data)
-        descs_fps_df = calculate_moldescriptors(fpsjoined)
-
-        print(descs_fps_df.head(0))
-        print('number of rows in descs %d' % descs_fps_df.shape[0])
-        print('number of cols in descs %d' % descs_fps_df.shape[1])
-
-        descs_fps_df.drop('ROMol', inplace=True, axis=1)
-
-        descs_fps_df.to_csv('/Users/marianagonzmed/Desktop/ThesisStuff/shapeNW_training/descriptors/descriptors_%s.csv' % output_filename, index=False)
+# if __name__ == '__main__':
+#
+#     #mypath = sys.argv[1]
+#     mypath= '/Users/marianagonzmed/Desktop/ThesisStuff/shapeNW_training'
+#
+#     if isdir(mypath):
+#         onlyfiles_all = [ join(mypath, f) for f in listdir(mypath) if isfile(join(mypath, f))]
+#         onlyfiles = [_file for _file in onlyfiles_all if _file.endswith('.csv') ]
+#     elif isfile(mypath):
+#         onlyfiles =[mypath]
+#
+#
+#     for _file in onlyfiles:
+#         output_filename = _file.split('/')[-1].split('.')[0]
+#
+#         #esol_data = pd.read_csv(_file, sep='\t', header=None)
+#         #esol_data.columns = ['smiles', 'protein', 'type', 'aff', 'affmM', 'paff']
+#         esol_data = pd.read_csv(_file, sep=',', header=None)
+#         print(esol_data.head(2))
+#         esol_data.columns = ['smiles', 'measure', 'nM', 'microM', 'pmicroM','canonical_smiles']
+#         #esol_data.columns = ['smiles']
+#
+#         # add RMol column with rdkit object to df
+#         PandasTools.AddMoleculeColumnToFrame(esol_data, smilesCol='canonical_smiles')
+#         # remove smiles that can't be processed
+#         esol_data = esol_data.mask(esol_data.astype(object).eq('None')).dropna()
+#         print('number of rows in intial df %d' % esol_data.shape[0])
+#
+#         fpsjoined = calculate_fingerprints(esol_data)
+#         descs_fps_df = calculate_moldescriptors(fpsjoined)
+#
+#         print(descs_fps_df.head(0))
+#         print('number of rows in descs %d' % descs_fps_df.shape[0])
+#         print('number of cols in descs %d' % descs_fps_df.shape[1])
+#
+#         descs_fps_df.drop('ROMol', inplace=True, axis=1)
+#
+#         descs_fps_df.to_csv('/Users/marianagonzmed/Desktop/ThesisStuff/shapeNW_training/descriptors/descriptors_%s.csv' % output_filename, index=False)
