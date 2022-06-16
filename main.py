@@ -35,22 +35,16 @@ if __name__ == '__main__':
         file_act = add_pmicromolar_column(file_act)
         file_act = canonical_smiles(file_act)
 
-        ##########
-        # lev score
-        ##########
-
-        esol_data = file_act.mask(file_act.astype(object).eq('None')).dropna()
-
-        # calculate descriptors
-        fpsjoined = calculate_fingerprints(esol_data)
-        descs_fps_df = calculate_moldescriptors(fpsjoined)
-
         ###################
-        # plot distribution of descriptors
+        # ECFPs
         ##################
 
+        esol_data = file_act.mask(file_act.astype(object).eq('None')).dropna()
+        descs_fps_df = calculate_fingerprints(esol_data)
+        #descs_fps_df = calculate_moldescriptors(descs_fps_df)
+
         ###################
-        # QSAR SVMR and ECFP 2, 1024
+        # Scaffolds train and test data
         ##################
 
         # get rows with EC50 and Ki
@@ -59,16 +53,23 @@ if __name__ == '__main__':
         # split training and test data by scaffolds
         EC50_Ki_descriptors = get_murcko_smiles(EC50_Ki_descriptors)
         PandasTools.AddMoleculeColumnToFrame(file_act, smilesCol='murcko_smiles', molCol='ROMol_murcko')
-        fps = [AllChem.GetMorganFingerprintAsBitVect(x,2,1024) for x in EC50_Ki_descriptors['ROMol_murcko']]
-        clusters_results = ClusterFps(fps, cutoff=0.4)
-        EC50_Ki_descriptors['murcko_cluster'] = clusters_results[0]
+        fps = [AllChem.GetMorganFingerprintAsBitVect(x, 2, 1024) for x in EC50_Ki_descriptors['ROMol_murcko']]
+
+        clusters_results, clusters = ClusterFps(fps, cutoff=0.4)
+        clusters_results = pd.concat([clusters_results, EC50_Ki_descriptors], axis=1, join='inner')
+        clusters_results = clusters_results.rename(columns={clusters_results.columns[0]: "murcko_cluster"})
+        clusters_results.drop('ROMol_murcko', inplace=True, axis=1)
 
         # split train and test
-        train = EC50_Ki_descriptors.groupby('murcko_cluster').sample(frac=0.8,random_state=200)
-        #train.to_csv('/Users/marianagonzmed/Desktop/ThesisStuff/shapeNW_training/descriptors/train_%s.csv' % output_filename, index=False)
-        test = EC50_Ki_descriptors.drop(train.index).sample(frac=1.0)
-        #test.to_csv('/Users/marianagonzmed/Desktop/ThesisStuff/shapeNW_training/descriptors/test_%s.csv' % output_filename, index=False)
+        train = clusters_results.groupby('murcko_cluster').sample(frac=0.8,random_state=200)
+        test = clusters_results.drop(train.index).sample(frac=1.0)
 
-        # supportvector(train_data, train_labels, cv=5, n_jobs=-1, find_hparams=True, working_dir=cwd, config_file=None)
+        print(train.head(0))
+
+        ##########
+        #  QSAR SVMR and ECFP 2, 1024
+        ##########
+
+        #supportvector(train_data, train_labels, cv=5, n_jobs=-1, find_hparams=True, working_dir=cwd, config_file=None)
         #model = supportvector()
 

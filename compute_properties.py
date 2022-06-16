@@ -46,7 +46,7 @@ def calculate_moldescriptors(df):
     return df
 
 
-def calculate_fingerprints(esol_data, radius = 2, nbits = 1024, kind = 'bits'):
+def calculate_fingerprints(esol_data, radius = 2, nbits = 1024, kind = 'bits', MACCS=False):
     morganfps = chemistry.morgan_fingerprint(esol_data, mols_col='ROMol', radius=radius, nbits=nbits, kind=kind)
     morganfps = morganfps.add_prefix('morgan_')
     print('number of rows in fps %d' % morganfps.shape[0])
@@ -56,13 +56,15 @@ def calculate_fingerprints(esol_data, radius = 2, nbits = 1024, kind = 'bits'):
     print('number of rows in fps %d' % morganfps.shape[0])
     print('number of cols in fps %d' % morganfps.shape[1])
 
-    maccsfps = chemistry.maccs_keys_fingerprint(esol_data, mols_col='ROMol')
-    maccsfps = maccsfps.add_prefix('maccs_')
-    fpsjoined = morganfps.join(maccsfps)
-    print(fpsjoined.head(0))
-    print('number of rows in fps %d' % fpsjoined.shape[0])
-    print('number of cols in fps %d' % fpsjoined.shape[1])
-    return fpsjoined
+    if MACCS:
+        maccsfps = chemistry.maccs_keys_fingerprint(esol_data, mols_col='ROMol')
+        maccsfps = maccsfps.add_prefix('maccs_')
+        morganfps = morganfps.join(maccsfps)
+        print(fpsjoined.head(0))
+        print('number of rows in fps %d' % fpsjoined.shape[0])
+        print('number of cols in fps %d' % fpsjoined.shape[1])
+
+    return morganfps
 
 
 if __name__ == '__main__':
