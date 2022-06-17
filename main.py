@@ -2,10 +2,12 @@ import pandas as pd
 from process_activity_data import rename_file_columns, average_activity_compound, add_pmicromolar_column, canonical_smiles
 from os.path import isfile, join, isdir
 from os import listdir
-from compute_properties import calculate_moldescriptors, calculate_fingerprints
+from compute_properties import calculate_fingerprints
 from murcko_scaffolds import get_murcko_smiles, ClusterFps
 from rdkit.Chem import PandasTools, AllChem
 from qsar import supportvector
+import numpy as np
+from sklearn.metrics import classification_report
 
 
 if __name__ == '__main__':
@@ -64,13 +66,17 @@ if __name__ == '__main__':
         train = clusters_results.groupby('murcko_cluster').sample(frac=0.8,random_state=200)
         test = clusters_results.drop(train.index).sample(frac=1.0)
 
-        print(train.shape[0])
-        print(test.shape[0])
+        train_data = train.loc[:, train.columns.str.startswith('morgan')].to_numpy()
+        train_labels =  train.loc[:, train.columns.str.startswith('p(microM)')].to_numpy().ravel()
+
+        test_data = test.loc[:, test.columns.str.startswith('morgan')].to_numpy()
+        test_labels = test.loc[:, test.columns.str.startswith('p(microM)')].to_numpy().ravel()
 
         ##########
         #  QSAR SVMR and ECFP 2, 1024
         ##########
 
-        #supportvector(train_data, train_labels, cv=5, n_jobs=-1, find_hparams=True, working_dir=cwd, config_file=None)
-        #model = supportvector()
+        model = supportvector(train_data, train_labels, cv=5, n_jobs=-1, find_hparams=True, working_dir=mypath, config_file=None)
+        model.
+
 
