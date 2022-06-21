@@ -7,7 +7,7 @@ from murcko_scaffolds import get_murcko_smiles, ClusterFps
 from rdkit.Chem import PandasTools, AllChem
 from qsar import supportvector
 import numpy as np
-from sklearn.metrics import classification_report
+from sklearn.metrics import mean_squared_error
 
 
 if __name__ == '__main__':
@@ -67,6 +67,7 @@ if __name__ == '__main__':
         test = clusters_results.drop(train.index).sample(frac=1.0)
 
         train_data = train.loc[:, train.columns.str.startswith('morgan')].to_numpy()
+        print('number of molecules in training set %d' % train_data.shape[0])
         train_labels =  train.loc[:, train.columns.str.startswith('p(microM)')].to_numpy().ravel()
 
         test_data = test.loc[:, test.columns.str.startswith('morgan')].to_numpy()
@@ -76,7 +77,9 @@ if __name__ == '__main__':
         #  QSAR SVMR and ECFP 2, 1024
         ##########
 
-        model = supportvector(train_data, train_labels, cv=5, n_jobs=-1, find_hparams=True, working_dir=mypath, config_file=None)
-        model.
+        qsar_model = supportvector(train_data, train_labels, cv=5, n_jobs=-1, find_hparams=True, working_dir=mypath, config_file=None)
+        qsar_prediction = qsar_model.best_estimator_.predict(test_data)
+        print('prediction mean squared error (the lower the better) %0.3f' % mean_squared_error(test_labels, qsar_prediction))
+
 
 

@@ -67,41 +67,58 @@ def calculate_fingerprints(esol_data, radius = 2, nbits = 1024, kind = 'bits', M
     return morganfps
 
 
-# if __name__ == '__main__':
-#
-#     #mypath = sys.argv[1]
-#     mypath= '/Users/marianagonzmed/Desktop/ThesisStuff/shapeNW_training'
-#
-#     if isdir(mypath):
-#         onlyfiles_all = [ join(mypath, f) for f in listdir(mypath) if isfile(join(mypath, f))]
-#         onlyfiles = [_file for _file in onlyfiles_all if _file.endswith('.csv') ]
-#     elif isfile(mypath):
-#         onlyfiles =[mypath]
-#
-#
-#     for _file in onlyfiles:
-#         output_filename = _file.split('/')[-1].split('.')[0]
-#
-#         #esol_data = pd.read_csv(_file, sep='\t', header=None)
-#         #esol_data.columns = ['smiles', 'protein', 'type', 'aff', 'affmM', 'paff']
-#         esol_data = pd.read_csv(_file, sep=',', header=None)
-#         print(esol_data.head(2))
-#         esol_data.columns = ['smiles', 'measure', 'nM', 'microM', 'pmicroM','canonical_smiles']
-#         #esol_data.columns = ['smiles']
-#
-#         # add RMol column with rdkit object to df
-#         PandasTools.AddMoleculeColumnToFrame(esol_data, smilesCol='canonical_smiles')
-#         # remove smiles that can't be processed
-#         esol_data = esol_data.mask(esol_data.astype(object).eq('None')).dropna()
-#         print('number of rows in intial df %d' % esol_data.shape[0])
-#
-#         fpsjoined = calculate_fingerprints(esol_data)
-#         descs_fps_df = calculate_moldescriptors(fpsjoined)
-#
-#         print(descs_fps_df.head(0))
-#         print('number of rows in descs %d' % descs_fps_df.shape[0])
-#         print('number of cols in descs %d' % descs_fps_df.shape[1])
-#
-#         descs_fps_df.drop('ROMol', inplace=True, axis=1)
-#
-#         descs_fps_df.to_csv('/Users/marianagonzmed/Desktop/ThesisStuff/shapeNW_training/descriptors/descriptors_%s.csv' % output_filename, index=False)
+if __name__ == '__main__':
+
+    #mypath = sys.argv[1]
+    mypath= '/Users/marianagonzmed/Desktop/ThesisStuff/shapeNW_training'
+
+    if isdir(mypath):
+        onlyfiles_all = [ join(mypath, f) for f in listdir(mypath) if isfile(join(mypath, f))]
+        onlyfiles = [_file for _file in onlyfiles_all if _file.endswith('.csv') ]
+    elif isfile(mypath):
+        onlyfiles =[mypath]
+
+
+    for _file in onlyfiles:
+        output_filename = _file.split('/')[-1].split('.')[0]
+        print(output_filename)
+
+        esol_data = pd.read_csv(_file, sep='\t')
+        if esol_data.shape[1] == 1:
+            esol_data = pd.read_csv(_file, sep=' ')
+        if esol_data.shape[1] == 1:
+            esol_data = pd.read_csv(_file, sep=',')
+
+        #esol_data.columns = ['smiles', 'protein', 'type', 'aff', 'affmM', 'paff']
+        #esol_data.columns = ['smiles', 'measure', 'nM', 'microM', 'pmicroM','canonical_smiles']
+        #esol_data.columns = ['smiles']
+
+        try:
+            esol_data.columns = ['protein', 'smiles','type', 'aff', 'affmM', 'paff']
+        except:
+            print('wring column names')
+            try:
+                esol_data.columns = ['prot','smiles', 'measure', 'nM']
+            except:
+                print('wrong column names')
+
+        print(esol_data.head(2))
+        esol_data = esol_data.drop_duplicates(subset='smiles', keep="last")
+
+        # add RMol column with rdkit object to df
+        PandasTools.AddMoleculeColumnToFrame(esol_data, smilesCol='smiles')
+        # remove smiles that can't be processed
+        esol_data = esol_data.mask(esol_data.astype(object).eq('None')).dropna()
+        print('number of rows in intial df %d' % esol_data.shape[0])
+
+        fpsjoined = calculate_fingerprints(esol_data)
+        descs_fps_df = calculate_moldescriptors(fpsjoined)
+
+        print(descs_fps_df.head(0))
+        print('number of rows in descs %d' % descs_fps_df.shape[0])
+        print('number of cols in descs %d' % descs_fps_df.shape[1])
+
+        descs_fps_df.drop('ROMol', inplace=True, axis=1)
+
+
+        #descs_fps_df.to_csv('/Users/marianagonzmed/Desktop/ThesisStuff/shapeNW_training/descriptors/descriptors_%s.csv' % output_filename, index=False)

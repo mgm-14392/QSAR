@@ -2,6 +2,10 @@ from os.path import isfile, join, isdir
 import matplotlib.pyplot as plt
 import pandas as pd
 import seaborn as sns
+import random
+from iteration_utilities import grouper
+from scipy import stats
+
 sns.set(style="darkgrid")
 
 # descriptors https://datagrok.ai/help/domains/chem/descriptors
@@ -28,12 +32,28 @@ descs_list = ['MolWt', 'FractionCSP3','NHOHCount','NOCount','NumAliphaticCarbocy
 
 # compare properties
 
-path_desktop = '/Users/marianagonzmed/Desktop'
-directories = ['P28845', 'P31645','P34913','Q99720','Q9UBN7']
+path_desktop = '/Users/marianagonzmed/Desktop/ThesisStuff/shapeNW_training/GENERATED/'
+directories = ['P03367','P31645','Q99720']
+
+
+def mann_whitney_u_test(distribution_1, distribution_2):
+    """
+    Perform the Mann-Whitney U Test, comparing two different distributions.
+    Args:
+       distribution_1: List.
+       distribution_2: List.
+    Outputs:
+        u_statistic: Float. U statisitic for the test.
+        p_value: Float.
+    """
+    u_statistic, p_value = stats.mannwhitneyu(distribution_1, distribution_2)
+    return u_statistic, p_value
+
+myfile = open(path_desktop + 'statsPoperties_genVSreal.txt', 'w')
 
 for _dir in directories:
-    path_gen_ligs = join(path_desktop, _dir) + '/' + 'descriptors_activity_smi_%s.csv' % _dir
-    path_real_ligs = join(path_desktop, _dir) + '/' + 'descriptors_gen_lig_%s.csv' % _dir
+    path_gen_ligs = join(path_desktop, _dir) + '/' + 'descriptors_test_%s.csv' % _dir
+    path_real_ligs = join(path_desktop, _dir) + '/' + 'descriptors_gen_smi_%s.csv' % _dir
 
     gen_ligs = pd.read_csv(path_gen_ligs)
     real_ligs = pd.read_csv(path_real_ligs)
@@ -49,17 +69,34 @@ for _dir in directories:
         fake_df = pd.DataFrame()
         fake_df['prop'] = gen_ligs[desc]
         fake_df['group'] = 'generated'
+
+        list_gen_props = list(gen_ligs[desc])
+        random.shuffle(list_gen_props)
+
+        # compute p_value of distributions
+        chunk_size = len(list(real_ligs[desc]))
+        p_values = []
+        for group in grouper(list_gen_props, chunk_size):
+            print(len(group))
+            u_statistic, p_value = mann_whitney_u_test(list(real_ligs[desc]), list(group))
+            p_values.append(p_value)
+
+        p_value_average = sum(p_values) / len(p_values)
+        myfile.write("p_value %s\n" % p_value_average)
+
         result = pd.concat([real_df, fake_df])
         result.index = result.reset_index()
 
         if (result['prop'] == 0).all():
-            print('no variance for descriptor %s' % desc)
+            myfile.write('Descriptor %s is only zero\n' % desc)
 
-        else:
+        # plot if p value is different
+        elif p_value_average <= 0.05:
+
             plt.figure()
             sns.boxplot(x="group", y="prop", data=result)
             plt.xlabel(desc)
-            plt.savefig('boxplot_%s_%s.png' % (_dir, desc))
+            plt.savefig(path_desktop + 'boxplot_%s_%s.png' % (_dir, desc))
 
             plt.figure()
             # check there are no floats
@@ -73,10 +110,12 @@ for _dir in directories:
 
                 ax.set_yscale("log")
                 plt.xlabel(desc)
-                plt.savefig('hist_%s_%s.png' % (_dir, desc))
+                plt.savefig(path_desktop + 'hist_%s_%s.png' % (_dir, desc))
 
             else:
                 sns.kdeplot(gen_ligs[desc])
                 sns.kdeplot(real_ligs[desc])
                 plt.xlabel(desc)
-                plt.savefig('dist_%s_%s.png' % (_dir, desc))
+                plt.savefig(path_desktop + 'dist_%s_%s.png' % (_dir, desc))
+
+    myfile.close()
