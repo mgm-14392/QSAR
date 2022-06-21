@@ -37,13 +37,13 @@ def ClusterFps(fps, cutoff=0.7):
     num_clust_g30 = sum(1 for c in clusters if len(c) > 30)
     num_clust_g50 = sum(1 for c in clusters if len(c) > 50)
 
-    print("total # clusters: ", len(clusters))
-    print("# clusters with only 1 compound: ", num_clust_g1)
-    print("# clusters with only 2 compound: ", num_clust_g2)
-    print("# clusters with >5 compounds: ", num_clust_g5)
-    print("# clusters with >25 compounds: ", num_clust_g25)
-    print("# clusters with >30 compounds: ", num_clust_g30)
-    print("# clusters with >50 compounds: ", num_clust_g50)
+    # print("total # clusters: ", len(clusters))
+    # print("# clusters with only 1 compound: ", num_clust_g1)
+    # print("# clusters with only 2 compound: ", num_clust_g2)
+    # print("# clusters with >5 compounds: ", num_clust_g5)
+    # print("# clusters with >25 compounds: ", num_clust_g25)
+    # print("# clusters with >30 compounds: ", num_clust_g30)
+    # print("# clusters with >50 compounds: ", num_clust_g50)
 
     # reshape cluster and df id
     clusters_results = {number:cs.index(tup) for tup in cs for number in tup}

@@ -76,46 +76,48 @@ for _dir in directories:
         # compute p_value of distributions
         chunk_size = len(list(real_ligs[desc]))
         p_values = []
+
         for group in grouper(list_gen_props, chunk_size):
             print(len(group))
             u_statistic, p_value = mann_whitney_u_test(list(real_ligs[desc]), list(group))
             p_values.append(p_value)
 
         p_value_average = sum(p_values) / len(p_values)
-        myfile.write("p_value %s\n" % p_value_average)
+        myfile.write("prot %s descriptor %s p_value %s  \n" % (_dir,desc,p_value_average))
 
         result = pd.concat([real_df, fake_df])
         result.index = result.reset_index()
 
-        if (result['prop'] == 0).all():
-            myfile.write('Descriptor %s is only zero\n' % desc)
-
         # plot if p value is different
-        elif p_value_average <= 0.05:
+        if p_value_average <= 0.05:
 
-            plt.figure()
-            sns.boxplot(x="group", y="prop", data=result)
-            plt.xlabel(desc)
-            plt.savefig(path_desktop + 'boxplot_%s_%s.png' % (_dir, desc))
-
-            plt.figure()
-            # check there are no floats
-            if (real_ligs[desc] % 1  == 0).all():
-
-                ax = sns.histplot(
-                    result,
-                    x="prop", hue="group",
-                    multiple="stack"
-                )
-
-                ax.set_yscale("log")
-                plt.xlabel(desc)
-                plt.savefig(path_desktop + 'hist_%s_%s.png' % (_dir, desc))
+            if (result['prop'] == 0).all():
+                myfile.write('Descriptor %s is only zero\n' % desc)
 
             else:
-                sns.kdeplot(gen_ligs[desc])
-                sns.kdeplot(real_ligs[desc])
+                plt.figure()
+                sns.boxplot(x="group", y="prop", data=result)
                 plt.xlabel(desc)
-                plt.savefig(path_desktop + 'dist_%s_%s.png' % (_dir, desc))
+                plt.savefig(path_desktop + 'boxplot_%s_%s.png' % (_dir, desc))
 
-    myfile.close()
+                plt.figure()
+                # check there are no floats
+                if (real_ligs[desc] % 1  == 0).all():
+
+                    ax = sns.histplot(
+                        result,
+                        x="prop", hue="group",
+                        multiple="stack"
+                    )
+
+                    ax.set_yscale("log")
+                    plt.xlabel(desc)
+                    plt.savefig(path_desktop + 'hist_%s_%s.png' % (_dir, desc))
+
+                else:
+                    sns.kdeplot(gen_ligs[desc])
+                    sns.kdeplot(real_ligs[desc])
+                    plt.xlabel(desc)
+                    plt.savefig(path_desktop + 'dist_%s_%s.png' % (_dir, desc))
+
+myfile.close()

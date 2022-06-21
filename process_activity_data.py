@@ -8,7 +8,7 @@ def rename_file_columns(file_act):
     try:
         file_act.columns = ['prot','smiles','measure','nM','microM','pmicroM']
     except:
-        print('This file has %d columns' % file_act.shape[1])
+        # print('This file has %d columns' % file_act.shape[1])
 
         try:
             file_act.columns = ['prot','smiles','measure','nM']
@@ -37,7 +37,7 @@ def canonical_smiles(esol_data):
     # remove smiles that can't be processed
     esol_data = esol_data.mask(esol_data.astype(object).eq('None')).dropna()
     esol_data['canonical_smiles'] = esol_data.ROMol.apply(MolToSmiles)
-    print('number of rows in intial df %d' % esol_data.shape[0])
+    #print('number of rows in intial df %d' % esol_data.shape[0])
     return esol_data
 
 
