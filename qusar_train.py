@@ -8,6 +8,12 @@ from rdkit.Chem import PandasTools, AllChem
 from qsar import supportvector
 from sklearn.metrics import mean_squared_error
 import pickle
+import joblib
+from math import sqrt
+import matplotlib.pyplot as plt
+import seaborn as sns
+from sklearn.metrics import make_scorer, mean_squared_error, r2_score
+import statistics
 
 
 if __name__ == '__main__':
@@ -50,7 +56,8 @@ if __name__ == '__main__':
         ##################
 
         # get rows with EC50 and Ki
-        EC50_Ki_descriptors = descs_fps_df.loc[descs_fps_df['measure'].isin(['Ki','EC50'])]
+        EC50_Ki_descriptors = descs_fps_df.loc[descs_fps_df['measure'].isin(['Ki'])]
+        EC50_Ki_descriptors.to_csv('/Users/marianagonzmed/Desktop/ThesisStuff/shapeNW_training/Ki_descriptors%s.csv'%output_filename)
         # print('number of molecules in with EC and Ki set %d' % EC50_Ki_descriptors.shape[0])
 
         # split training and test data by scaffolds
@@ -85,18 +92,21 @@ if __name__ == '__main__':
         test_labels = test.loc[:, test.columns.str.startswith('p(microM)')].to_numpy().ravel()
 
         ##########
-        #  QSAR SVMR and ECFP 2, 1024
+        #  QSAR SVMR and ECFP 2, 1024 train
         ##########
 
-        qsar_model = supportvector(train_data, train_labels, cv=5, n_jobs=-1, find_hparams=True, working_dir=mypath, config_file=None)
-        qsar_prediction = qsar_model.best_estimator_.predict(test_data)
-        print('prediction mean squared error (the lower the better) %0.3f' % mean_squared_error(test_labels, qsar_prediction))
+        qsar_model = supportvector(train_data, train_labels, cv=5, n_jobs=-1, working_dir=mypath, config_file=None)
+        qsar_prediction_test = qsar_model.best_estimator_.predict(test_data)
+        qsar_prediction_train = qsar_model.best_estimator_.predict(train_data)
+
+        sns.lineplot(x=test_labels, y=qsar_prediction_test)
+        plt.savefig('/Users/marianagonzmed/Desktop/ThesisStuff/shapeNW_training/test_qsar%s.png' % (output_filename))
+        r2_test = r2_score(qsar_prediction_test,test_labels)
+
+        print('r2 train %f' % r2_test)
+        print('prediction test RMSE (the lower the better) %0.3f' % sqrt(mean_squared_error(test_labels, qsar_prediction_test)))
+        print('prediction test MSE (the lower the better) %0.3f' % mean_squared_error(test_labels, qsar_prediction_test))
 
         # save trained SVM
         filename = join(mypath, output_filename + '.sav')
-        print(filename)
         pickle.dump(qsar_model, open(filename, 'wb'))
-
-
-
-

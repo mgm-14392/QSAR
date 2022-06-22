@@ -5,6 +5,9 @@ import seaborn as sns
 import random
 from iteration_utilities import grouper
 from scipy import stats
+from statistics import mean, stdev
+from math import sqrt
+import scipy.stats
 
 sns.set(style="darkgrid")
 
@@ -49,6 +52,20 @@ def mann_whitney_u_test(distribution_1, distribution_2):
     u_statistic, p_value = stats.mannwhitneyu(distribution_1, distribution_2)
     return u_statistic, p_value
 
+def f_z_score(list1, list2, p_value=True):
+    num = mean(list1) - mean(list2)
+    sqrtlen_list1 = sqrt(len(list1))
+    sqrtlen_list2 = sqrt(len(list2))
+    err1_m = (stdev(list1)/sqrtlen_list1)**2
+    err2_m = (stdev(list2)/sqrtlen_list2)**2
+    den = sqrt(err1_m + err2_m)
+    z_score = num/den
+    if p_value:
+        return scipy.stats.norm.sf(abs(z_score))*2 # two tailed?
+    else:
+        return num/den
+
+
 myfile = open(path_desktop + 'statsPoperties_genVSreal.txt', 'w')
 
 for _dir in directories:
@@ -70,31 +87,42 @@ for _dir in directories:
         fake_df['prop'] = gen_ligs[desc]
         fake_df['group'] = 'generated'
 
-        list_gen_props = list(gen_ligs[desc])
-        random.shuffle(list_gen_props)
-
-        # compute p_value of distributions
-        chunk_size = len(list(real_ligs[desc]))
-        p_values = []
-
-        for group in grouper(list_gen_props, chunk_size):
-            print(len(group))
-            u_statistic, p_value = mann_whitney_u_test(list(real_ligs[desc]), list(group))
-            p_values.append(p_value)
-
-        p_value_average = sum(p_values) / len(p_values)
-        myfile.write("prot %s descriptor %s p_value %s  \n" % (_dir,desc,p_value_average))
-
         result = pd.concat([real_df, fake_df])
         result.index = result.reset_index()
 
-        # plot if p value is different
-        if p_value_average <= 0.05:
+        if (result['prop'] == 0).all():
+            myfile.write('Descriptor %s is only zero\n' % desc)
 
-            if (result['prop'] == 0).all():
-                myfile.write('Descriptor %s is only zero\n' % desc)
+        else:
 
-            else:
+            list_gen_props = list(gen_ligs[desc])
+            random.shuffle(list_gen_props)
+
+            # compute p_value of distributions
+            chunk_size = len(list(real_ligs[desc]))
+            p_values = []
+            z_p_values = []
+
+            for group in grouper(list_gen_props, chunk_size):
+                u_statistic, p_value = mann_whitney_u_test(list(real_ligs[desc]), list(group))
+                p_values.append(p_value*2) # two tailed ?
+
+                z_score_pvals = f_z_score(list(real_ligs[desc]), list(group))
+                z_p_values.append(z_score_pvals)
+
+            p_value_average = mean(p_values)
+            z_p_value_average = mean(z_p_values)
+            print(p_value_average)
+            print(z_p_value_average)
+
+            myfile.write("prot %s descriptor %s p_value %0.3f  z_value %0.3f\n" % (_dir,
+                                                                                   desc,
+                                                                                   p_value_average,
+                                                                                   z_p_value_average))
+
+
+            # plot if p value is different
+            if p_value_average <= 0.05 and z_p_value_average <= 0.05:
                 plt.figure()
                 sns.boxplot(x="group", y="prop", data=result)
                 plt.xlabel(desc)
@@ -102,7 +130,7 @@ for _dir in directories:
 
                 plt.figure()
                 # check there are no floats
-                if (real_ligs[desc] % 1  == 0).all():
+                if (real_ligs[desc] % 1 == 0).all():
 
                     ax = sns.histplot(
                         result,
