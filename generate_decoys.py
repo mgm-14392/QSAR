@@ -60,9 +60,11 @@ chosen_properties = "ALL"
 num_decoys_per_active = 2
 
 
-input_decoys_file = sys.argv[1]
-results = select_and_evaluate_decoys(input_decoys_file, file_loc='./', output_loc='./',
-                                     dataset=chosen_properties, num_cand_dec_per_act=num_decoys_per_active*2, num_dec_per_act=num_decoys_per_active)
+results = select_and_evaluate_decoys("molecules_%s.smi" % name, file_loc='./', output_loc='decoys/',
+                                     dataset=chosen_properties, num_cand_dec_per_act=num_decoys_per_active*2,
+                                     num_dec_per_act=num_decoys_per_active,
+                                     num_cores = 10)
+
 
 print(results)
 

@@ -11,8 +11,13 @@ import pickle
 import joblib
 
 
+# Create json file:
+# python data/prepare_data.py --data_path smi_P31645.smi --dataset_name smi_P31645 --save_dir jsonfiles/
+# create decoys
+# python generate_decoys.py smi_P31645.smi
+
 # input file or directory
-mypath = '/Users/marianagonzmed/Desktop/ThesisStuff/shapeNW_training'
+mypath = '/Users/marianagonzmed/Desktop/ThesisStuff/shapeNW_training/QSAR'
 if isdir(mypath):
     onlyfiles_all = [ join(mypath, f) for f in listdir(mypath) if isfile(join(mypath, f))]
     onlyfiles = [_file for _file in onlyfiles_all if _file.endswith('.csv') ]
