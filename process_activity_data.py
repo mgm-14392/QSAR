@@ -18,7 +18,11 @@ def rename_file_columns(file_act):
 
 
 def average_activity_compound(file_act):
-    return file_act.groupby(['smiles', 'measure'])['nM'].mean().reset_index()
+    return file_act.groupby(['canonical_smiles', 'measure'])['nM'].mean().reset_index()
+
+
+def stdv_activity_compound(file_act):
+    return file_act.groupby(['canonical_smiles', 'measure']).nM.std().reset_index()
 
 
 def add_pmicromolar_column(res):

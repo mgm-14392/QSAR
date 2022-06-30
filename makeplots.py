@@ -88,7 +88,7 @@ def hist(result, _dir, desc, path_desktop):
     plt.savefig(path_desktop + 'hist_%s_%s.png' % (_dir, desc))
 
 
-def kde(data, x_label, _dir, path_desktop,labels=[]):
+def kde(data, x_label, _dir, path_desktop, labels=[]):
     plt.figure()
     for name in labels:
         sns.kdeplot(data[name], label=name)
@@ -163,7 +163,12 @@ if __name__ == '__main__':
                         hist(result, _dir, desc, path_desktop)
 
                     else:
-                        kde(desc, _dir, path_desktop, cols=[gen_ligs[desc], real_ligs[desc]])
+                        plt.figure()
+                        sns.kdeplot(gen_ligs[desc], label='generated')
+                        sns.kdeplot(real_ligs[desc], label='effectors')
+                        plt.legend()
+                        plt.xlabel(desc)
+                        plt.savefig(path_desktop + 'dist_%s_%s.png' % (_dir, desc))
 
     myfile.close()
 

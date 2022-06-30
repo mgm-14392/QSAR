@@ -29,7 +29,7 @@ def write_config(filename: str, args: dict):
 
 def supportvector(train_data, train_labels, cv=5, n_jobs=-1, working_dir=cwd, config_file=None):
 
-    # scorer = make_scorer(mean_squared_error, greater_is_better=False, squared=False)
+    RMSE_scorer = make_scorer(mean_squared_error, greater_is_better=False, squared=False)
     # scorer = make_scorer(mean_squared_error, greater_is_better=False)
     # scorer = make_scorer(r2_score, greater_is_better=True)
 
@@ -39,8 +39,7 @@ def supportvector(train_data, train_labels, cv=5, n_jobs=-1, working_dir=cwd, co
         'gamma': [1e-6, 1e-5, 1e-4, 1e-3, 1e-2, 1e-1]
     }
 
-    print('model evaluation score %s: ' % scorer)
-    model = GridSearchCV(SVR(), param_grid=params, n_jobs=n_jobs, cv=cv, verbose=1)
+    model = GridSearchCV(SVR(), param_grid=params, n_jobs=n_jobs, cv=cv, verbose=1, scoring=RMSE_scorer)
 
     model.fit(train_data, train_labels)
 

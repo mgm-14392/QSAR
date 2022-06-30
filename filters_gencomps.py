@@ -13,19 +13,6 @@ from rdkit.Chem import Descriptors
 # project_root = '/c7/home/margonza/scscore'
 #
 # oracle = Oracle(name = 'SA')
-#
-# generated_comps = open('gen_smi_P03367.smi', 'r')
-# generated_comps_lines = generated_comps.readlines()
-
-# generated_decoys = open('myfile.txt', 'r')
-# generated_decoys_lines = generated_decoys.readline()
-#
-# tested_comps = open('myfile.txt', 'r')
-# tested_comps_lines = tested_comps.readline()
-
-
-#feasible = open('/Users/marianagonzmed/Desktop/ThesisStuff/shapeNW_training/GENERATED/P03367/generated_feasible.txt', 'w')
-#unfeasible = open('/Users/marianagonzmed/Desktop/ThesisStuff/shapeNW_training/GENERATED/P03367/generated_unfeasible.txt', 'w')
 
 # scores = open('scores.txt','w')
 # scores.write("smiles\tsascore\tscscore\tRAscore\n")
@@ -42,7 +29,7 @@ from rdkit.Chem import Descriptors
 
 # load file
 
-name = 'Q99720'
+name = 'P31645'
 path_scores = '/Users/marianagonzmed/Desktop/ThesisStuff/shapeNW_training/GENERATED/%s' % name
 file = 'scores_%s.txt' % name
 scores = pd.read_csv(join(path_scores, file), sep = '\t')

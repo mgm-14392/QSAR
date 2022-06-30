@@ -23,6 +23,11 @@ from data.prepare_data import read_file, preprocess
 from select_and_evaluate_decoys import select_and_evaluate_decoys
 
 # Whether to use GPU for generating molecules with DeLinker
+
+#generate json files
+# ls
+# python data/prepare_data.py --data_path sorted_tested_P31645_scores.smi --dataset_name smi_P31645 --save_dir jsonfiles/
+
 use_gpu = True
 
 data_path = sys.argv[1]

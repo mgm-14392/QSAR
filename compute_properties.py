@@ -1,10 +1,11 @@
-from rdkit.Chem import PandasTools, Descriptors, MolToSmiles
+from rdkit.Chem import PandasTools, Descriptors
 import pandas as pd
-import sys
-from os.path import isfile, join, isdir
-from os import listdir
 from janitor import chemistry
-
+from sklearn.manifold import TSNE
+import seaborn as sns
+import matplotlib.pyplot as plt
+from sklearn.decomposition import PCA
+import numpy as np
 
 descs_list = ['MolWt', 'FractionCSP3' ,'NHOHCount','NOCount','NumAliphaticCarbocycles',
               'NumAliphaticHeterocycles','NumAliphaticHeterocycles','NumAromaticCarbocycles',
@@ -19,7 +20,7 @@ descs_list = ['MolWt', 'FractionCSP3' ,'NHOHCount','NOCount','NumAliphaticCarboc
               'fr_benzodiazepine', 'fr_bicyclic', 'fr_diazo', 'fr_dihydropyridine', 'fr_epoxide', 'fr_ester',
               'fr_ether', 'fr_furan', 'fr_guanido', 'fr_halogen', 'fr_hdrzine', 'fr_hdrzone',
               'fr_imidazole', 'fr_imide', 'fr_isocyan', 'fr_isothiocyan', 'fr_ketone', 'fr_ketone_Topliss',
-              'fr_lactam' 'fr_lactone', 'fr_methoxy', 'fr_morpholine', 'fr_nitrile', 'fr_nitro', 'fr_nitro_arom',
+              'fr_lactam', 'fr_lactone', 'fr_methoxy', 'fr_morpholine', 'fr_nitrile', 'fr_nitro', 'fr_nitro_arom',
               'fr_nitro_arom_nonortho', 'fr_nitroso', 'fr_oxazole', 'fr_oxime', 'fr_para_hydroxylation',
               'fr_phenol', 'fr_phenol_noOrthoHbond', 'fr_phos_acid', 'fr_phos_ester', 'fr_piperdine',
               'fr_piperzine', 'fr_priamide', 'fr_prisulfonamd', 'fr_pyridine', 'fr_quatN', 'fr_sulfide',
@@ -35,14 +36,11 @@ def calculate_moldescriptors(df):
 
     for i, j in Descriptors._descList:
         if i in descs_list:
-            print(i)
             try:
                 df = df.add_column(i, df.ROMol.map(j))
 
             except:
                 print('error')
-
-    print('computed descriptors')
     return df
 
 
@@ -69,56 +67,140 @@ def calculate_fingerprints(esol_data, radius = 2, nbits = 1024, kind = 'bits', M
 
 if __name__ == '__main__':
 
-    #mypath = sys.argv[1]
-    mypath= '/Users/marianagonzmed/Desktop/ThesisStuff/shapeNW_training'
+    radius = 2
+    nbits = 1024
+    kind = 'bits'
 
-    if isdir(mypath):
-        onlyfiles_all = [ join(mypath, f) for f in listdir(mypath) if isfile(join(mypath, f))]
-        onlyfiles = [_file for _file in onlyfiles_all if _file.endswith('.csv') ]
-    elif isfile(mypath):
-        onlyfiles =[mypath]
+    zinc_path = 'scoreszinc_randomsample_filtered_decoys.smi'
 
+    zinc = pd.read_csv(zinc_path, sep=' ')
+    print(zinc.head(0))
+    zinc.columns = ['smiles','zinc_id']
+    PandasTools.AddMoleculeColumnToFrame(zinc, smilesCol='smiles')
+    zinc_fps = calculate_fingerprints(zinc)
+    zinc_fps.drop('ROMol', inplace=True, axis=1)
+    zinc_fps['database'] = 'zinc'
+    zinc_desc = calculate_moldescriptors(zinc)
+    zinc_desc.drop('ROMol', inplace=True, axis=1)
+    zinc_desc['database'] = 'zinc'
 
-    for _file in onlyfiles:
-        output_filename = _file.split('/')[-1].split('.')[0]
-        print(output_filename)
+    names = ['P03367','P31645','Q99720']
 
-        esol_data = pd.read_csv(_file, sep='\t')
-        if esol_data.shape[1] == 1:
-            esol_data = pd.read_csv(_file, sep=' ')
-        if esol_data.shape[1] == 1:
-            esol_data = pd.read_csv(_file, sep=',')
-
-        #esol_data.columns = ['smiles', 'protein', 'type', 'aff', 'affmM', 'paff']
-        #esol_data.columns = ['smiles', 'measure', 'nM', 'microM', 'pmicroM','canonical_smiles']
-        #esol_data.columns = ['smiles']
-
-        try:
-            esol_data.columns = ['protein', 'smiles','type', 'aff', 'affmM', 'paff']
-        except:
-            print('wring column names')
-            try:
-                esol_data.columns = ['prot','smiles', 'measure', 'nM']
-            except:
-                print('wrong column names')
-
-        print(esol_data.head(2))
-        esol_data = esol_data.drop_duplicates(subset='smiles', keep="last")
-
-        # add RMol column with rdkit object to df
-        PandasTools.AddMoleculeColumnToFrame(esol_data, smilesCol='smiles')
-        # remove smiles that can't be processed
-        esol_data = esol_data.mask(esol_data.astype(object).eq('None')).dropna()
-        print('number of rows in intial df %d' % esol_data.shape[0])
-
-        fpsjoined = calculate_fingerprints(esol_data)
-        descs_fps_df = calculate_moldescriptors(fpsjoined)
-
-        print(descs_fps_df.head(0))
-        print('number of rows in descs %d' % descs_fps_df.shape[0])
-        print('number of cols in descs %d' % descs_fps_df.shape[1])
-
-        descs_fps_df.drop('ROMol', inplace=True, axis=1)
+    for name in names:
+        print(name)
+        file_dec = '%s_filtered_decoys_selected.smi' % name
+        file_gen = '%s_filtered_generated.smi' % name
+        mypath_gen = 'filtered_files/%s'%file_gen
+        mypath_dec = 'filtered_files/%s'%file_dec
+        mypath_tested = 'filtered_files/Ki_%s.dat'%name
 
 
-        #descs_fps_df.to_csv('/Users/marianagonzmed/Desktop/ThesisStuff/shapeNW_training/descriptors/descriptors_%s.csv' % output_filename, index=False)
+        tested_1 = pd.read_csv(mypath_tested, sep=' ')
+        print(tested_1.head(0))
+        PandasTools.AddMoleculeColumnToFrame(tested_1, smilesCol='canonical_smiles')
+        tested_fps = calculate_fingerprints(tested_1)
+        tested_fps.drop('ROMol', inplace=True, axis=1)
+        tested_fps['database'] = 'tested'
+        tested_desc = calculate_moldescriptors(tested_1)
+        tested_desc.drop('ROMol', inplace=True, axis=1)
+        tested_desc['database'] = 'tested'
+
+
+        decoys = pd.read_csv(mypath_dec, header=None)
+        decoys.columns = ['smiles']
+        PandasTools.AddMoleculeColumnToFrame(decoys, smilesCol='smiles')
+        decoys_fps = calculate_fingerprints(decoys)
+        decoys_fps.drop('ROMol', inplace=True, axis=1)
+        decoys_fps['database'] = 'decoys'
+        decoys_desc = calculate_moldescriptors(decoys)
+        decoys_desc.drop('ROMol', inplace=True, axis=1)
+        decoys_desc['database'] = 'decoys'
+
+
+        generated = pd.read_csv(mypath_gen, header=None)
+        generated.columns = ['smiles']
+        PandasTools.AddMoleculeColumnToFrame(generated, smilesCol='smiles')
+        generated_fps = calculate_fingerprints(generated)
+        generated_fps.drop('ROMol', inplace=True, axis=1)
+        generated_fps['database'] = 'generated'
+        generated_desc = calculate_moldescriptors(generated)
+        generated_desc.drop('ROMol', inplace=True, axis=1)
+        generated_desc['database'] = 'generated'
+
+
+        fps_frames = [tested_fps, decoys_fps, generated_fps, zinc_fps]
+        fps_result = pd.concat(fps_frames)
+        X_fps = fps_result.loc[:, fps_result.columns.str.startswith('morgan')].to_numpy()
+        Y_fps = fps_result['database'].to_numpy()
+
+        descs_frames = [tested_desc, decoys_desc, generated_desc, zinc_desc]
+        descs_result = pd.concat(descs_frames)
+        X_descs = descs_result[descs_list].to_numpy()
+        Y_descs = descs_result['database'].to_numpy()
+
+        print(X_fps.shape)
+        print(Y_fps.shape)
+
+        print(X_descs.shape)
+        print(Y_descs.shape)
+
+        #######
+        # Chemical space
+        #######
+
+        # We want to get TSNE embedding with 2 dimensions
+        # first reduce dimensionality before feeding to t-sne
+        pca_fps = PCA(n_components=50)
+        X_pca_fps = pca.fit_transform(X_fps)
+
+        # randomly sample data to run quickly
+        rows = np.arange(3000)
+        np.random.shuffle(rows)
+        n_select = 2000
+
+        perplexity_vals = [5,10,20,30,40,50]
+
+        for perplexity in perplexity_vals:
+
+            tsne = TSNE(n_components=2, verbose=1, perplexity=perplexity, n_iter=1000, learning_rate='auto')
+            tsne_result = tsne.fit_transform(X_pca_fps[rows[:n_select],:])
+
+            np.save('tsne_%d_%s.npy'% (perplexity, name), tsne_result)
+
+            # Plot the result of our TSNE with the label color coded
+            # A lot of the stuff here is about making the plot look pretty and not TSNE
+            tsne_result_df = pd.DataFrame({'tsne_1': tsne_result[:,0], 'tsne_2': tsne_result[:,1], 'label': Y_fps})
+            fig, ax = plt.subplots()
+            sns.scatterplot(x='tsne_1', y='tsne_2', hue='label', data=tsne_result_df, ax=ax,s=120)
+            lim = (tsne_result.min()-5, tsne_result.max()+5)
+            ax.set_xlim(lim)
+            ax.set_ylim(lim)
+            ax.set_aspect('equal')
+            ax.legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.0)
+            plt.savefig('tsne_%d_%s.npy'% (perplexity, name))
+
+        # PCA
+        pca = PCA(n_components=4)
+        components = pca.fit_transform(X_descs)
+        labels = {
+            str(i): f"PC {i+1} ({var:.1f}%)"
+            for i, var in enumerate(pca.explained_variance_ratio_ * 100)
+        }
+        print(labels)
+
+        np.save('PCA_%s.npy'%name, components)
+
+        pc_df = pd.DataFrame(data = components, columns = ['PC1', 'PC2','PC3','PC4'])
+        pc_df['Cluster'] = Y_descs
+        print(pc_df.head())
+
+        df = pd.DataFrame({'var':pca.explained_variance_ratio_, 'PC':['PC1','PC2','PC3','PC4']})
+        sns.barplot(x='PC',y="var", data=df, color="c")
+        plt.savefig('pca_varianceexplained_%s'%name)
+
+        sns.lmplot( x="PC1", y="PC2", data=pc_df, fit_reg=False, hue='Cluster', legend=True, scatter_kws={"s": 80})
+        plt.savefig('pca_%s'%name)
+
+
+
+
