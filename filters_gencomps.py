@@ -1,7 +1,7 @@
 from tdc import Oracle
 from scscore_standalone_model_numpy import SCScorer
 import os
-# from RAscore import RAscore_XGB
+from RAscore import RAscore_XGB
 import matplotlib.pyplot as plt
 import pandas as pd
 import seaborn as sns
@@ -10,22 +10,22 @@ from rdkit.Chem import PandasTools, Descriptors
 from janitor import chemistry
 from rdkit.Chem import Descriptors
 
-# project_root = '/c7/home/margonza/scscore'
-#
-# oracle = Oracle(name = 'SA')
+project_root = '/c7/home/margonza/scscore'
 
-# scores = open('scores.txt','w')
-# scores.write("smiles\tsascore\tscscore\tRAscore\n")
-# model =SCScorer()
-# model.restore(os.path.join(project_root, 'models', 'full_reaxys_model_1024uint8', 'model.ckpt-10654.as_numpy.json.gz'))
-#
-# xgb_scorer = RAscore_XGB.RAScorerXGB()
-# for line in generated_comps_lines:
-#     smi = line.rstrip()
-#     sa = oracle(smi)
-#     smi2, sco = model.get_score_from_smi(smi)
-#     RA = xgb_scorer.predict(smi)
-#     scores.write("%s\t%0.3f\t%0.3f\t%0.3f\n" % (smi, sa, sco, RA)
+oracle = Oracle(name = 'SA')
+
+scores = open('scores.txt','w')
+scores.write("smiles\tsascore\tscscore\tRAscore\n")
+model = SCScorer()
+model.restore(os.path.join(project_root, 'models', 'full_reaxys_model_1024uint8', 'model.ckpt-10654.as_numpy.json.gz'))
+
+xgb_scorer = RAscore_XGB.RAScorerXGB()
+for line in generated_comps_lines:
+  smi = line.rstrip()
+  sa = oracle(smi)
+  smi2, sco = model.get_score_from_smi(smi)
+  RA = xgb_scorer.predict(smi)
+  scores.write("%s\t%0.3f\t%0.3f\t%0.3f\n" % (smi, sa, sco, RA)
 
 # load file
 
